@@ -14,7 +14,6 @@ from django.utils.safestring import mark_safe
 
 import bleach
 import markdown
-
 # comes with wagtail
 from bs4 import BeautifulSoup
 
