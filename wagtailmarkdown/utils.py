@@ -15,6 +15,9 @@ from django.utils.safestring import mark_safe
 import bleach
 import markdown
 
+# comes with wagtail
+from bs4 import BeautifulSoup
+
 from .mdx import linker, tables
 from .warnings import WagtailMarkdownDeprecationWarning
 
@@ -35,7 +38,15 @@ def _transform_markdown_into_html(text):
 
 
 def _sanitise_markdown_html(markdown_html):
-    return bleach.clean(markdown_html, **_get_bleach_kwargs())
+
+    cleaned_html = bleach.clean(markdown_html, **_get_bleach_kwargs())
+
+    # See: https://github.com/mozilla/bleach/issues/330 .. 
+    soup = BeautifulSoup(cleaned_html, 'html5lib')
+    for script_tag in soup.find_all('script'):
+        if script_tag.attrs.get('type', False) not in ['math/tex; mode=display','math/tex']:
+            script_tag.extract()
+    return str(soup)
 
 
 def _get_bleach_kwargs():
@@ -76,6 +87,7 @@ def _get_bleach_kwargs():
         'ol',
         'hr',
         'br',
+        'script'
     ]
     bleach_kwargs['attributes'] = {
         '*': [
@@ -101,6 +113,9 @@ def _get_bleach_kwargs():
             'colspan',
             'align',
         ],
+        'script': [
+            'type',
+        ]
     }
     bleach_kwargs['styles'] = [
         'color',
@@ -137,11 +152,12 @@ def _get_markdown_kwargs():
         'codehilite',
         tables.TableExtension(),
         linker.LinkerExtension({
-             '__default__': 'wagtailmarkdown.mdx.linkers.page',
-             'page:': 'wagtailmarkdown.mdx.linkers.page',
-             'image:': 'wagtailmarkdown.mdx.linkers.image',
-             'doc:': 'wagtailmarkdown.mdx.linkers.document',
-         })
+            '__default__': 'wagtailmarkdown.mdx.linkers.page',
+            'page:': 'wagtailmarkdown.mdx.linkers.page',
+            'image:': 'wagtailmarkdown.mdx.linkers.image',
+            'doc:': 'wagtailmarkdown.mdx.linkers.document',
+        }),
+        'mdx_math'
     ]
     markdown_kwargs['extension_configs'] = {
         'codehilite': [
