@@ -41,10 +41,11 @@ def _sanitise_markdown_html(markdown_html):
 
     cleaned_html = bleach.clean(markdown_html, **_get_bleach_kwargs())
 
-    # See: https://github.com/mozilla/bleach/issues/330 .. 
+    # See: https://github.com/mozilla/bleach/issues/330 ..
     soup = BeautifulSoup(cleaned_html, 'html5lib')
     for script_tag in soup.find_all('script'):
-        if script_tag.attrs.get('type', False) not in ['math/tex; mode=display','math/tex']:
+        if (script_tag.attrs.get('type', False)
+                not in ['math/tex; mode=display', 'math/tex']):
             script_tag.extract()
     return str(soup)
 
